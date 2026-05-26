@@ -40,7 +40,7 @@ patent_pipeline_mod = safe_import("patent_pipeline")
 
 heyreach_config_found = (
     (HEYREACH_DIR / "config.toml").exists()
-    or (HEYREACH_DIR / ".streamlit" / "secrets.toml").exists()
+    or (HEYREACH_DIR / ".streamlit" / "secrets.toml").exists() or (HEYREACH_DIR / "secrets.toml").exists()
 )
 list_and_campaign_mod = safe_import("list_and_campaign_creation") if heyreach_config_found else None
 
