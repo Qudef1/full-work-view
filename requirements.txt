@@ -1,0 +1,8 @@
+streamlit
+pandas
+requests
+openai
+python-dotenv
+toml
+beautifulsoup4
+tqdm
