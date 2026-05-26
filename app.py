@@ -1,5 +1,6 @@
 import importlib
 import json
+import os
 import re
 import sys
 import tempfile
@@ -37,23 +38,73 @@ location_normalizer_mod = safe_import("location_normalizer")
 form_d_companies_mod = safe_import("form_d_companies")
 form_d_enricher_mod = safe_import("form_d_enricher")
 patent_pipeline_mod = safe_import("patent_pipeline")
+list_and_campaign_mod = safe_import("list_and_campaign_creation")
 
-heyreach_config_found = (
-    (HEYREACH_DIR / "config.toml").exists()
-    or (HEYREACH_DIR / ".streamlit" / "secrets.toml").exists() or (HEYREACH_DIR / "secrets.toml").exists()
-)
-list_and_campaign_mod = safe_import("list_and_campaign_creation") if heyreach_config_found else None
 
-if list_and_campaign_mod is not None:
-    run_pipeline_custom = getattr(list_and_campaign_mod, "run_pipeline_custom", None)
-    load_linkedin_accounts = getattr(list_and_campaign_mod, "load_linkedin_accounts", None)
-    heyreach_accounts = getattr(list_and_campaign_mod, "LINKEDIN_ACCOUNTS", [])
-    heyreach_api_key = getattr(list_and_campaign_mod, "API_KEY", None)
-else:
-    run_pipeline_custom = None
-    load_linkedin_accounts = None
-    heyreach_accounts = []
-    heyreach_api_key = None
+def _get_streamlit_secret(key: str, default: Any = None) -> Any:
+    try:
+        return st.secrets.get(key, default)
+    except Exception:
+        return default
+
+
+def _parse_accounts_secret(value: Any) -> List[dict]:
+    if not value:
+        return []
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except json.JSONDecodeError:
+            return []
+    if isinstance(value, list):
+        parsed = []
+        for acc in value:
+            if not isinstance(acc, dict) or "id" not in acc:
+                continue
+            try:
+                parsed.append({"id": int(acc["id"]), "name": str(acc.get("name", "")).strip()})
+            except (ValueError, TypeError):
+                continue
+        return parsed
+    return []
+
+
+def _load_heyreach_config() -> tuple[Optional[str], List[dict]]:
+    api_key: Optional[str] = None
+    accounts: List[dict] = []
+
+    if list_and_campaign_mod is not None:
+        api_key = getattr(list_and_campaign_mod, "API_KEY", None)
+        accounts = getattr(list_and_campaign_mod, "LINKEDIN_ACCOUNTS", []) or []
+        if not accounts:
+            load_fn = getattr(list_and_campaign_mod, "load_linkedin_accounts", None)
+            if callable(load_fn):
+                try:
+                    accounts = load_fn() or []
+                except Exception:
+                    accounts = []
+        if not api_key:
+            load_key_fn = getattr(list_and_campaign_mod, "load_api_key", None)
+            if callable(load_key_fn):
+                try:
+                    api_key = load_key_fn()
+                except Exception:
+                    api_key = None
+
+    if not api_key:
+        api_key = os.getenv("HEYREACH_API_KEY") or os.getenv("OPENAI_API_KEY") or _get_streamlit_secret("HEYREACH_API_KEY")
+        if api_key and isinstance(api_key, str):
+            api_key = api_key.strip() or None
+
+    if not accounts:
+        accounts = _parse_accounts_secret(_get_streamlit_secret("linkedin_accounts") or _get_streamlit_secret("LINKEDIN_ACCOUNTS"))
+
+    return api_key, accounts
+
+
+heyreach_api_key, heyreach_accounts = _load_heyreach_config()
+run_pipeline_custom = getattr(list_and_campaign_mod, "run_pipeline_custom", None) if list_and_campaign_mod is not None else None
+load_linkedin_accounts = getattr(list_and_campaign_mod, "load_linkedin_accounts", None) if list_and_campaign_mod is not None else None
 
 # Build readable account labels for UI (used in extraction and pipeline sender selection)
 account_labels = [f"{acc.get('name','')} ({acc.get('id')})" for acc in heyreach_accounts]
@@ -157,9 +208,6 @@ def fetch_conversations_for_account_sync(
     progress_bar: Optional[st.delta_generator] = None,
     status_text: Optional[st.delta_generator] = None,
 ) -> List[dict]:
-    if list_and_campaign_mod is None:
-        raise RuntimeError("HeyReach pipeline module is not available.")
-
     api_key = heyreach_api_key
     if not api_key:
         raise RuntimeError("HeyReach API key is not loaded.")
@@ -359,13 +407,17 @@ def render_heyreach_tab():
 
     df: Optional[pd.DataFrame] = None
     if data_source == "🌐 Извлечь из HeyReach API":
-        if list_and_campaign_mod is None:
+        if not heyreach_api_key:
             st.warning(
-                "HeyReach API integration недоступна. Проверьте папку `heyreach-data-filtraition` и config.toml / .streamlit/secrets.toml."
+                "HeyReach API integration недоступна. Установите HEYREACH_API_KEY в переменных окружения или Streamlit secrets."
             )
             data_source = "📥 Загрузить CSV файл"
         else:
             account_labels = [f"{acc.get('name','')} ({acc.get('id')})" for acc in heyreach_accounts]
+            if not account_labels:
+                st.info(
+                    "Аккаунты HeyReach не найдены. Добавьте список аккаунтов в Streamlit secrets под ключом `linkedin_accounts`."
+                )
             selected = st.multiselect(
                 "Выберите аккаунты HeyReach для извлечения данных",
                 options=account_labels,

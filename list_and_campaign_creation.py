@@ -11,6 +11,7 @@ import logging
 import requests
 import pandas as pd
 from datetime import datetime
+from typing import Any, Optional
 import toml
 
 def parse_linkedin_accounts(accounts_raw: str) -> list[dict]:
@@ -32,17 +33,55 @@ def parse_linkedin_accounts(accounts_raw: str) -> list[dict]:
             continue
     return parsed
 
+def _get_streamlit_secret(key: str, default: Any = None) -> Any:
+    try:
+        import streamlit as st
+        return st.secrets.get(key, default)
+    except Exception:
+        return default
+
+
 def load_linkedin_accounts() -> list[dict]:
     secrets_path = os.path.join(os.path.dirname(__file__), ".streamlit", "secrets.toml")
     config_path = os.path.join(os.path.dirname(__file__), "config.toml")
     config_file = secrets_path if os.path.exists(secrets_path) else config_path
-    try:
-        with open(config_file, "r", encoding="utf-8") as f:
-            config = toml.load(f)
-        return config.get("linkedin_accounts", [])
-    except Exception as e:
-        logging.warning(f"Ошибка загрузки TOML config: {e}")
-        return []
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, "r", encoding="utf-8") as f:
+                config = toml.load(f)
+            return config.get("linkedin_accounts", [])
+        except Exception as e:
+            logging.warning(f"Ошибка загрузки TOML config: {e}")
+
+    account_secret = _get_streamlit_secret("linkedin_accounts") or _get_streamlit_secret("LINKEDIN_ACCOUNTS")
+    if isinstance(account_secret, str):
+        try:
+            account_secret = json.loads(account_secret)
+        except json.JSONDecodeError:
+            account_secret = []
+    if isinstance(account_secret, list):
+        parsed = []
+        for acc in account_secret:
+            if not isinstance(acc, dict) or "id" not in acc:
+                continue
+            try:
+                parsed.append({"id": int(acc["id"]), "name": str(acc.get("name", "")).strip()})
+            except (ValueError, TypeError):
+                continue
+        return parsed
+    return []
+
+
+def load_api_key() -> Optional[str]:
+    for env_key in ("HEYREACH_API_KEY", "API_KEY", "OPENAI_API_KEY"):
+        value = os.getenv(env_key)
+        if value:
+            return str(value).strip()
+
+    secret_value = _get_streamlit_secret("HEYREACH_API_KEY") or _get_streamlit_secret("API_KEY") or _get_streamlit_secret("OPENAI_API_KEY")
+    if isinstance(secret_value, str) and secret_value.strip():
+        return secret_value.strip()
+    return None
 
 # Do NOT call load_config at import time in this local copy. Provide safe defaults.
 API_KEY = None
