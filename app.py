@@ -741,36 +741,67 @@ def render_layoffs_tab():
     st.markdown("Simple filtering controls for the layoffs dataset.")
     st.write(f"Rows: {len(df):,}")
 
-    # Provide a text search across a few common columns
-    text_cols = [c for c in df.columns if df[c].dtype == object][:6]
-    search = st.text_input("Search text (will search common text columns)")
-    date_col = None
-    for c in df.columns:
-        if "date" in c.lower() or "day" in c.lower():
-            date_col = c
-            break
+    # Find common filter columns
+    industry_col = next((c for c in df.columns if "industry" in c.lower()), None)
+    country_col = next((c for c in df.columns if "country" in c.lower()), None)
+    date_col = next((c for c in df.columns if "date" in c.lower() or "day" in c.lower()), None)
+
+    selected_industries: List[str] = []
+    if industry_col is not None:
+        industries = sorted(df[industry_col].dropna().astype(str).unique())
+        selected_industries = st.multiselect(
+            f"Filter by {industry_col}",
+            options=industries,
+            default=[],
+            key="layoffs_industry_filter",
+        )
+
+    selected_countries: List[str] = []
+    if country_col is not None:
+        countries = sorted(df[country_col].dropna().astype(str).unique())
+        selected_countries = st.multiselect(
+            f"Filter by {country_col}",
+            options=countries,
+            default=[],
+            key="layoffs_country_filter",
+        )
+
+    search = st.text_input("Search text (searches text columns)", key="layoffs_search_text")
 
     start_date = None
     end_date = None
-    if date_col:
+    if date_col is not None:
         try:
             df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
             min_d = df[date_col].min()
             max_d = df[date_col].max()
             if pd.notna(min_d) and pd.notna(max_d):
-                start_date, end_date = st.date_input("Date range", [min_d.date(), max_d.date()])
+                start_date, end_date = st.date_input("Date range", [min_d.date(), max_d.date()], key="layoffs_date_range")
         except Exception:
             date_col = None
 
     filtered = df.copy()
-    if search:
-        mask = False
-        for c in text_cols:
-            mask = mask | filtered[c].astype(str).str.contains(search, case=False, na=False)
-        filtered = filtered[mask]
+    mask = pd.Series(True, index=filtered.index)
 
-    if date_col and start_date and end_date:
-        filtered = filtered[filtered[date_col].between(pd.to_datetime(start_date), pd.to_datetime(end_date))]
+    if selected_industries and industry_col is not None:
+        mask &= filtered[industry_col].astype(str).isin(selected_industries)
+
+    if selected_countries and country_col is not None:
+        mask &= filtered[country_col].astype(str).isin(selected_countries)
+
+    if search:
+        text_cols = [c for c in filtered.columns if filtered[c].dtype == object]
+        if text_cols:
+            text_mask = pd.Series(False, index=filtered.index)
+            for c in text_cols:
+                text_mask |= filtered[c].astype(str).str.contains(search, case=False, na=False)
+            mask &= text_mask
+
+    if date_col is not None and start_date is not None and end_date is not None:
+        date_mask = filtered[date_col].between(pd.to_datetime(start_date), pd.to_datetime(end_date))
+        mask &= date_mask.fillna(False)
+
+    filtered = filtered[mask]
 
     st.dataframe(filtered, use_container_width=True)
 
