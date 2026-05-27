@@ -790,11 +790,12 @@ def render_layoffs_tab():
         mask &= filtered[country_col].astype(str).isin(selected_countries)
 
     if search:
-        text_cols = [c for c in filtered.columns if filtered[c].dtype == object]
+        search = str(search).strip()
+        text_cols = filtered.select_dtypes(include=["object", "string"]).columns.tolist()
         if text_cols:
             text_mask = pd.Series(False, index=filtered.index)
             for c in text_cols:
-                text_mask |= filtered[c].astype(str).str.contains(search, case=False, na=False)
+                text_mask |= filtered[c].astype(str).str.contains(search, case=False, na=False, regex=False)
             mask &= text_mask
 
     if date_col is not None and start_date is not None and end_date is not None:
