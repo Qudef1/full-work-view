@@ -706,6 +706,29 @@ def render_form_d_tab():
 
 def render_patent_tab():
     st.header("Patent Results Viewer")
+    st.markdown(
+        "[Перейти в сервис Patent Lead Generation](https://lensprocessing.streamlit.app/) :rocket:"
+    )
+    st.markdown(
+        "#### Как получить данные из Lens и загрузить на обработку"
+    )
+    st.markdown(
+        "1. Перейдите на [lens.org](https://www.lens.org/) и введите поисковый запрос. Уже готовый запрос: "
+        "[Запрос для Lens](https://www.lens.org/lens/search/patent/list?q=(title:(telehealth%20OR%20telemedicine%20OR%20%22patient%20monitoring%22%20OR%20%22remote%20diagnosis%22%20OR%20%22digital%20health%22%20OR%20%22health%20platform%22%20OR%20%22clinical%20decision%22%20OR%20%22medical%20imaging%22%20OR%20%22biosensor%22%20OR%20%22wearable%22%20OR%20%22energy%20management%22%20OR%20%22smart%20grid%22%20OR%20%22energy%20storage%22%20OR%20%22solar%20monitoring%22%20OR%20%22battery%20management%22%20OR%20%22EV%20charging%22%20OR%20%22microgrid%22%20OR%20%22power%20optimization%22%20OR%20%22machine%20learning%22%20OR%20%22deep%20learning%22%20OR%20%22neural%20network%22%20OR%20%22natural%20language%20processing%22%20OR%20%22computer%20vision%22%20OR%20%22predictive%20analytics%22%20OR%20%22AI%20platform%22%20OR%20%22MLOps%22%20OR%20%22model%20deployment%22%20OR%20%22payment%20processing%22%20OR%20%22fraud%20detection%22%20OR%20%22risk%20scoring%22%20OR%20%22open%20banking%22%20OR%20%22digital%20wallet%22%20OR%20%22lending%20platform%22%20OR%20%22credit%20scoring%22%20OR%20%22KYC%22%20OR%20%22RegTech%22%20OR%20%22algorithmic%20trading%22%20OR%20%22predictive%20maintenance%22%20OR%20%22condition%20monitoring%22%20OR%20%22industrial%20IoT%22%20OR%20%22smart%20factory%22%20OR%20%22asset%20tracking%22%20OR%20%22digital%20twin%22%20OR%20%22fleet%20management%22%20OR%20%22route%20optimization%22%20OR%20%22mobility%20platform%22%20OR%20%22traffic%20management%22%20OR%20%22logistics%20optimization%22%20OR%20%22vehicle%20telematics%22%20OR%20%22smart%20building%22%20OR%20%22building%20automation%22%20OR%20%22property%20management%22%20OR%20%22facility%20management%22%20OR%20%22HVAC%20optimization%22%20OR%20%22occupancy%20monitoring%22%20OR%20%22genomics%20platform%22%20OR%20%22drug%20discovery%22%20OR%20%22clinical%20trial%22%20OR%20%22laboratory%20automation%22%20OR%20%22bioinformatics%22%20OR%20%22precision%20medicine%22%20OR%20%22digital%20pathology%22%20OR%20%22threat%20detection%22%20OR%20%22anomaly%20detection%22%20OR%20%22network%20security%22%20OR%20%22identity%20management%22%20OR%20%22zero%20trust%22%20OR%20%22vulnerability%20management%22%20OR%20%22compliance%20automation%22%20OR%20%22precision%20agriculture%22%20OR%20%22crop%20monitoring%22%20OR%20%22irrigation%20management%22%20OR%20%22yield%20prediction%22%20OR%20%22farm%20management%22%20OR%20%22livestock%20monitoring%22)%20AND%20abstract:(software%20OR%20platform%20OR%20SaaS%20OR%20app%20OR%20cloud%20OR%20API%20OR%20dashboard%20OR%20%22machine%20learning%22%20OR%20AI%20OR%20algorithm%20OR%20mobile%20OR%20IoT%20OR%20pipeline%20OR%20automation%20OR%20analytics))%20NOT%20applicant.name:(University%20OR%20Institute%20OR%20College%20OR%20Samsung%20OR%20Philips%20OR%20Siemens%20OR%20Medtronic%20OR%20Johnson%20OR%20Abbott%20OR%20Roche%20OR%20Baxter%20OR%20%22General%20Electric%22%20OR%20Schneider%20OR%20ABB%20OR%20Honeywell%20OR%20Eaton%20OR%20Emerson%20OR%20Rockwell%20OR%20Continental%20OR%20Google%20OR%20Microsoft%20OR%20Apple%20OR%20Amazon%20OR%20IBM%20OR%20Intel%20OR%20Meta%20OR%20Nvidia%20OR%20Oracle%20OR%20Cisco%20OR%20Salesforce%20OR%20Adobe%20OR%20SAP%20OR%20Qualcomm%20OR%20Huawei%20OR%20Baidu%20OR%20Alibaba%20OR%20Tencent%20OR%20Sony%20OR%20LG%20OR%20Panasonic%20OR%20Bosch%20OR%20Visa%20OR%20Mastercard%20OR%20%22American%20Express%22%20OR%20PayPal%20OR%20JPMorgan%20OR%20Goldman%20OR%20Citibank%20OR%20HSBC%20OR%20Fiserv%20OR%20Stripe%20OR%20Toyota%20OR%20Ford%20OR%20BMW%20OR%20Volkswagen%20OR%20Daimler%20OR%20Waymo%20OR%20Tesla%20OR%20Uber%20OR%20Trimble%20OR%20Pfizer%20OR%20Novartis%20OR%20AstraZeneca%20OR%20Illumina%20OR%20Thermo%20OR%20%22Bio-Rad%22%20OR%20%22Palo%20Alto%22%20OR%20CrowdStrike%20OR%20Symantec%20OR%20McAfee%20OR%20Fortinet%20OR%20Shell%20OR%20BP%20OR%20ExxonMobil%20OR%20%22John%20Deere%22%20OR%20BASF%20OR%20Bayer%20OR%20Syngenta%20OR%20%22Bank%20of%20America%22%20OR%20%22Bank%20of%20America%20Corp%22%20OR%20Dell%20OR%20%22Advanced%20Micro%20Devices%22%20OR%20Monsanto%20OR%20Nokia%20OR%20Cargill%20OR%20OpenAI)%20AND%20jurisdiction:(US%20OR%20EP%20OR%20GB%20OR%20CA%20OR%20AU)&p=0&n=10&s=_score&d=%2B&f=false&e=false&l=en&authorField=author&dateFilterField=publishedDate&orderBy=%2B_score&presentation=false&preview=true&stemmed=true&useAuthorId=false)",
+    )
+    st.markdown(
+        "2. Выберите нужный промежуток дат в Lens."
+    )
+    st.markdown(
+        "3. Нажмите кнопку «Экспорт» и сохраните результаты в CSV."
+    )
+    st.markdown(
+        "4. Перейдите на сервис [Lens Processing](https://lensprocessing.streamlit.app/)."
+    )
+    st.markdown(
+        "5. Загрузите полученный CSV на сервис для обработки."
+    )
+
     sample_path = FULL_WORK_DIR / "patent_results(2)(1).csv"
     uploaded = st.file_uploader("Upload Patent CSV to view", type=["csv"], key="patent_csv_view")
 
@@ -739,6 +762,7 @@ def render_layoffs_tab():
         return
 
     st.markdown("Simple filtering controls for the layoffs dataset.")
+    st.markdown("Data updates every week. [Download new data](https://www.kaggle.com/datasets/swaptr/layoffs-2022). See the original website: [Layoffs](https://layoffs.fyi/)")
     st.write(f"Rows: {len(df):,}")
 
     # Find common filter columns
